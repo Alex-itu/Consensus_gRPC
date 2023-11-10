@@ -27,7 +27,7 @@ message AccessResponse {
 
 syntax = "proto3";
 
-option go_package = "github.com/PatrickMatthiesen/DSYS-gRPC-template/proto";
+option go_package = "github.com/Alex-itu/Consensus_gRPC/tree/main/proto";
 
 package helloservice;
 

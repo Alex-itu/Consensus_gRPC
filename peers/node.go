@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	hs "github.com/Alex-itu/Consensus_gRPC/tree/main/proto/peer-to-peer"
+	hs "github.com/Alex-itu/Consensus_gRPC/tree/main/proto"
 	"github.com/hashicorp/consul/api"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

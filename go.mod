@@ -1,4 +1,4 @@
-module github.com/Alex-itu/Consensus_gRPC/tree/main/proto/peer-to-peer
+module github.com/Alex-itu/Consensus_gRPC/tree/main/proto
 
 go 1.19
 
