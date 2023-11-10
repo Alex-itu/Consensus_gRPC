@@ -1,4 +1,4 @@
-module github.com/Alex-itu/Consensus_gRPC/tree/main/proto
+module github.com/Alex-itu/Consensus_gRPC
 
 go 1.19
 
@@ -26,7 +26,6 @@ require (
 )
 
 require (
-	github.com/PatrickMatthiesen/DSYS-gRPC-template v0.0.0-20231007191821-ce3a4c7bd074
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/consul/api v1.26.1
 	golang.org/x/net v0.17.0
