@@ -1,84 +1,102 @@
 // how to call the peer to peer network
 // have one terminal connect to
-// go run peers/node.go :5000 localhost:8500
+// go run peers/node.go :5000 localhost:5001
 // have another terminal connect to
-// go run peers/node.go :5001 localhost:8500
+// go run peers/node.go :5001 localhost:5000
 // the peers will then connect
 
 package main
 
 import (
-	"fmt"
-	"log"
-	"net"
-	"os"
-	"strconv"
-	"time"
+    "context"
+    "log"
+    "net"
+    "os"
+    "strconv"
+    "time"
 
-	hs "github.com/Alex-itu/Consensus_gRPC/proto"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+    hs "github.com/Alex-itu/Consensus_gRPC/proto"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/reflection"
 )
 
-type node struct {
-	hs.UnimplementedHelloServiceServer
-	I int
-	C hs.HelloServiceClient
+// Node structure
+type Node struct {
+    hs.UnimplementedHelloServiceServer
+    ID     int
+    Client hs.HelloServiceClient
 }
 
-// SayHello implements helloworld.GreeterServer
-func (n *node) SayHello(ctx context.Context, in *hs.HelloRequest) (*hs.HelloReply, error) {
-	return &hs.HelloReply{Message: "Hello " + strconv.Itoa(n.I)}, nil
+// SayHello is the RPC method that implements helloworld.GreeterServer
+func (n *Node) SayHello(ctx context.Context, in *hs.HelloRequest) (*hs.HelloReply, error) {
+    return &hs.HelloReply{Message: "Hello " + strconv.Itoa(n.ID)}, nil
 }
 
 func main() {
-	// pass the port as an argument and also the port of the other node
-	args := os.Args[1:]
+    args := os.Args[1:]
 
-	fmt.Println("Args: ", args[0])
+    // example arg[0] -> :5000
+    port := args[0]
+    otherNodeAddress := args[1]
 
-	// example arg[0] -> :5000
-	port := args[0]
-	address := args[1]
+    server, lis, err := createServer(port)
+    if err != nil {
+        log.Fatalf("failed to create server: %v", err)
+    }
 
-	lis, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
+    node := &Node{ID: 42, Client: nil}
+    hs.RegisterHelloServiceServer(server, node)
+    reflection.Register(server)
 
-	n := grpc.NewServer()        // n is for serving purpose
-	noden := node{I: 42, C: nil} // noden is for opeartional purposes
+    startServer(server, lis)
 
-	hs.RegisterHelloServiceServer(n, &noden)
-	// Register reflection service on gRPC server.
-	reflection.Register(n)
+    // wait for other nodes to be ready
+    time.Sleep(30 * time.Second)
 
-	// start listening
-	go func() {
-		if err := n.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
+    // setup connection with other node
+    err = connectToOtherNode(node, otherNodeAddress)
+    if err != nil {
+        log.Fatalf("could not connect or greet the other node: %v", err)
+    }
 
-	// wait for other nodes to come up
-	time.Sleep(30 * time.Second)
+    for {
+        time.Sleep(10 * time.Second)
+    }
+}
 
-	// setup connection with other node
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	noden.C = hs.NewHelloServiceClient(conn)
+// createServer creates a gRPC server and returns it along with its listener
+func createServer(port string) (*grpc.Server, net.Listener, error) {
+    lis, err := net.Listen("tcp", port)
+    if err != nil {
+        return nil, nil, err
+    }
+    return grpc.NewServer(), lis, nil
+}
 
-	r, err := noden.C.SayHello(context.Background(), &hs.HelloRequest{Name: "John"})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	log.Printf("Greeting from the other node: %s", r.Message)
+// startServer starts the passed in gRPC server
+func startServer(server *grpc.Server, lis net.Listener) {
+    go func() {
+        if err := server.Serve(lis); err != nil {
+            log.Fatalf("failed to serve: %v", err)
+        }
+    }()
+}
 
-	for {
-		time.Sleep(10 * time.Second)
-	}
+// connectToOtherNode establishes a connection with the other node and performs a greeting
+func connectToOtherNode(node *Node, address string) error {
+    conn, err := grpc.Dial(address, grpc.WithInsecure())
+    if err != nil {
+        return err
+    }
+    defer conn.Close()
+
+    node.Client = hs.NewHelloServiceClient(conn)
+
+    r, err := node.Client.SayHello(context.Background(), &hs.HelloRequest{Name: "John"})
+    if err != nil {
+        return err
+    }
+
+    log.Printf("Greeting from the other node: %s", r.Message)
+    return nil
 }
