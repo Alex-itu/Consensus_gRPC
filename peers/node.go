@@ -42,17 +42,18 @@ var clientservertokenstream hs.HelloServiceClient
 var nodeServerconn *grpc.ClientConn
 
 var nodeID = flag.Int("id", 10, "The id for the node")
-var conPort = flag.String("port", "20", "port to another node")
+var conPort = flag.String("port", "10", "port to another node")
 
 func main() {
 	flag.Parse()
 
 	node := &Node{
 		ID:             *nodeID,
-		Port:           *conPort,
+		Port:           strconv.Itoa(*nodeID), //for now ID == Port
 		Client:         nil,
 		Clientforward:  nil,
-		Clientbackward: nil}
+		Clientbackward: nil,
+	}
 
 	fmt.Printf("nodeID: " + strconv.Itoa(node.ID) + " and port to connect to: " + node.Port)
 
@@ -109,28 +110,37 @@ func createClientServerConn(node Node) {
 }
 
 // connectToOtherNode establishes a connection with the other node and performs a greeting
-func connectToOtherNode(node *Node, address string) error {
-	time.Sleep(10 * time.Second)
+func connectToOtherNode(node Node) error {
+	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
 
-	conn, err := grpc.Dial(address)
+	connforward, err := grpc.Dial(strconv.Itoa(*nodeID+10), opts...)
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer connforward.Close()
 
-	node.Client = hs.NewHelloServiceClient(conn)
+	node.Clientforward = hs.NewHelloServiceClient(connforward)
 
-	fmt.Println("the connection is: ", conn.GetState().String())
+	//need to check for if nodeID is 10, since the backward node is 30 or the highst id
+	connBackward, err := grpc.Dial(strconv.Itoa(*nodeID-10), opts...)
+	if err != nil {
+		return err
+	}
+	defer connBackward.Close()
+
+	node.Clientbackward = hs.NewHelloServiceClient(connBackward)
+
 	return nil
 }
 
 func parseInput(stream hs.HelloService_SayHelloClient) {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("--------------------")
 
 	//Infinite loop to listen for clients input.
 	for {
-		fmt.Print("-> ")
 
 		//Read input into var input and any errors into err
 		input, err := reader.ReadString('\n')
@@ -151,33 +161,52 @@ func SendMessage(content string, stream hs.HelloService_SayHelloClient) {
 	stream.Send(message)
 }
 
-func (n *Node) SayHello(ctx context.Context, in *hs.HelloRequest) (*hs.HelloReply, error) {
-	return &hs.HelloReply{Message: "Hello " + strconv.Itoa(n.ID)}, nil
+// this is for server listening
+func (s *Node) SayHello(msgStream hs.HelloService_SayHelloServer) error {
+	// get the next message from the stream
+	for {
+		msg, err := msgStream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		//placeholder
+		if msg.Name == "the client name for this nodeserver" {
+			//should send token to the next client ('forward' node's client
+			//sendmessage(msg)
+		} else if msg.Name == "the name for the 'backwards' node's client" {
+			//should send token access to the client for this server
+			//sendmessage(msg)
+		}
+	}
+
+	return nil
 }
 
+// this is for client listening
 func listenForMessages(stream hs.HelloService_SayHelloClient) {
 	for {
 		time.Sleep(1 * time.Second)
 		if stream != nil {
 			msg, err := stream.Recv()
 			if err == io.EOF {
-				fmt.Printf("Error: io.EOF in listenForMessages in client.go \n")
-				log.Printf("Error: io.EOF in listenForMessages in client.go")
+				fmt.Printf("Error: io.EOF in listenForMessages \n")
+				log.Printf("Error: io.EOF in listenForMessages")
 				break
 			}
 			if err != nil {
 				fmt.Printf("%v \n", err)
-				log.Fatalf("%v", err)
-
-				//delete later
-				fmt.Printf(msg.String())
 			}
 
-			/*if strings.Contains("msg.Content", "*clientsName"+" Connected") {
-				// Updates the clientID
-				//NodeID = int(msg.ClientID)
-
-			}*/
+			//placeholder
+			if msg.Message != "something" {
+				fmt.Printf("Something something... you now have access")
+				// set token to true
+			}
 		}
 	}
 }

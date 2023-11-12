@@ -32,19 +32,23 @@ option go_package = "github.com/Alex-itu/Consensus_gRPC/tree/main/proto";
 package helloservice;
 
 service HelloService {
+  //change these names
   rpc SayHello (stream HelloRequest) returns (stream HelloReply) {}
 }
 
 // The request message containing the user's name.
+//change name, also add more types in
 message HelloRequest {
   string name = 1;
 }
 
 // The response message containing the greetings
+//change name, also add more types in
 message HelloReply {
   string message = 1;
 }
 
+//not sure if need
 message Peer {
   int32 id = 1;
   string name = 2;
