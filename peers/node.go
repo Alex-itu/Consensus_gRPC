@@ -8,18 +8,21 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
+
 	"strconv"
+	"strings"
 	"time"
 
 	hs "github.com/Alex-itu/Consensus_gRPC/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	//"google.golang.org/grpc/reflection"
 )
 
 // Node structure
@@ -29,13 +32,17 @@ type Node struct {
 	Client hs.HelloServiceClient
 }
 
-// SayHello is the RPC method that implements helloworld.GreeterServer
-func (n *Node) SayHello(ctx context.Context, in *hs.HelloRequest) (*hs.HelloReply, error) {
-	return &hs.HelloReply{Message: "Hello " + strconv.Itoa(n.ID)}, nil
+// startServer starts the passed in gRPC server
+func startServer(server *grpc.Server, lis net.Listener) {
+	go func() {
+		if err := server.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
 }
 
 func main() {
-	args := os.Args[1:]
+	/*args := os.Args[1:]
 
 	// example arg[0] -> :5000
 	port := args[0]
@@ -63,25 +70,31 @@ func main() {
 
 	for {
 		time.Sleep(10 * time.Second)
-	}
-}
+	}*/
+	//--------------------------------------------------------------------
+	args := os.Args[1:]
 
-// createServer creates a gRPC server and returns it along with its listener
-func createServer(port string) (*grpc.Server, net.Listener, error) {
-	lis, err := net.Listen("tcp", port)
+	id, err := strconv.Atoi(args[0])
+	address := args[1]
+
+	node := &Node{ID: id, Client: nil}
+
+	fmt.Println("--- CLIENT APP ---")
+
+	//"Discorver" other nodes (We just need hard coded values)
+	// if other nodes exsist, the join the connection
+	connectToOtherNode(node, address) //TODO: fix
+
+	var yoyo hs.HelloServiceClient // maybe set global
+	ChatStream, err := yoyo.SayHello(context.Background())
 	if err != nil {
-		return nil, nil, err
+		fmt.Printf("Error on receive: %v \n", err)
+		log.Fatalf("Error on receive: %v", err)
 	}
-	return grpc.NewServer(), lis, nil
-}
+	// finally when done, simply wait for for access with either token og agaadasdlasd
+	go listenForMessages(ChatStream)
+	parseInput(ChatStream)
 
-// startServer starts the passed in gRPC server
-func startServer(server *grpc.Server, lis net.Listener) {
-	go func() {
-		if err := server.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
 }
 
 // connectToOtherNode establishes a connection with the other node and performs a greeting
@@ -94,35 +107,35 @@ func connectToOtherNode(node *Node, address string) error {
 
 	node.Client = hs.NewHelloServiceClient(conn)
 
-	r, err := node.Client.SayHello(context.Background(), &hs.HelloRequest{Name: "John"})
-	if err != nil {
-		return err
-	}
-
-	log.Printf("Greeting from the other node: %s", r.Message)
+	fmt.Println("the connection is: ", conn.GetState().String())
 	return nil
 }
 
+func parseInput(stream hs.HelloService_SayHelloClient) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("--------------------")
+
+	//Infinite loop to listen for clients input.
+	for {
+		fmt.Print("-> ")
+
+		//Read input into var input and any errors into err
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Printf("%v \n", err)
+			log.Fatal(err)
+		}
+		input = strings.TrimSpace(input) //Trim input
+
+		SendMessage(input, stream)
+	}
+}
+
 func SendMessage(content string, stream hs.HelloService_SayHelloClient) {
-
-	/*if clientID != -1 {
-		vectorClock[clientID]++
+	message := &hs.HelloRequest{
+		Name: "something",
 	}
-	message := &gRPC.ChatMessage{
-		Content:     content,
-		ClientName:  *clientsName,
-		VectorClock: vectorClock,
-	}*/
-
-	i := 0
-
-	if i == 0 {
-		i++
-		stream.Send(message)
-	} else {
-		//stream.Send(message)
-		stream.Send(message) // Server for some reason only reads every second message sent so this is just to clear the "buffer"
-	}
+	stream.Send(message)
 }
 
 func listenForMessages(stream hs.HelloService_SayHelloClient) {
