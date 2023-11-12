@@ -30,71 +30,89 @@ import (
 // Node structure
 type Node struct {
 	hs.UnimplementedHelloServiceServer
-	ID     int
-	Client hs.HelloServiceClient
+	ID             int
+	Port           string
+	Client         hs.HelloServiceClient
+	Clientforward  hs.HelloServiceClient
+	Clientbackward hs.HelloServiceClient
 }
 
-// startServer starts the passed in gRPC server
-func startServer(server *grpc.Server, lis net.Listener) {
-	go func() {
-		if err := server.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
-}
+var clientservertokenstream hs.HelloServiceClient
+
+var nodeServerconn *grpc.ClientConn
 
 var nodeID = flag.Int("id", 10, "The id for the node")
-var connectedPort = flag.String("port", "20", "port to another node")
+var conPort = flag.String("port", "20", "port to another node")
 
 func main() {
-	//args := os.Args[1:]
-
-	//id, err := strconv.Atoi(args[0])
-	//address := args[1]
 	flag.Parse()
 
-	node := &Node{ID: *nodeID, Client: nil}
+	node := &Node{
+		ID:             *nodeID,
+		Port:           *conPort,
+		Client:         nil,
+		Clientforward:  nil,
+		Clientbackward: nil}
 
-	fmt.Println("--- CLIENT APP ---")
-	fmt.Printf("nodeID: " + strconv.Itoa(*nodeID) + " and port to connect to: " + *connectedPort)
+	fmt.Printf("nodeID: " + strconv.Itoa(node.ID) + " and port to connect to: " + node.Port)
 
-	//"Discorver" other nodes (We just need hard coded values)
-	// if other nodes exsist, the join the connection
-	//connectToOtherNode(node, *connectedPort) //TODO: fix
+	createServer(*node)
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(1 * time.Second)
+
+	createClientServerConn(*node)
+	defer nodeServerconn.Close()
+
+	tokenStream, err := clientservertokenstream.SayHello(context.Background())
+	if err != nil {
+		fmt.Printf("Error on receive: %v \n", err)
+	}
+
+	// finally when done, simply wait for for access with either token og agaadasdlasd
+	go listenForMessages(tokenStream)
+	parseInput(tokenStream)
+
+}
+
+func createServer(node Node) {
+	list, err := net.Listen("tcp", fmt.Sprintf(":%s", node.Port))
+	if err != nil {
+		fmt.Printf("Server : Failed to listen on port : %v \n", err)
+		log.Printf("Server  Failed to listen on port : %v", err) //If it fails to listen on the port, run launchServer method again with the next value/port in ports array
+		return
+	}
+
+	var opts []grpc.ServerOption
+	clientServer := grpc.NewServer(opts...)
+
+	hs.RegisterHelloServiceServer(clientServer, node)
+
+	if err := clientServer.Serve(list); err != nil {
+		fmt.Printf("failed to serve %v", err)
+	}
+}
+
+func createClientServerConn(node Node) {
 
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
-	conn, err := grpc.Dial(*connectedPort, opts...)
+
+	conn, err := grpc.Dial(node.Port, opts...)
 	if err != nil {
 		fmt.Printf("failed on Dial: %v", err)
 	}
-	//defer conn.Close()
 
 	node.Client = hs.NewHelloServiceClient(conn)
-
-	//fmt.Println("the connection is: ", conn.GetState().String())
-
-	var yoyo hs.HelloServiceClient // maybe set global
-	ChatStream, err := yoyo.SayHello(context.Background())
-	if err != nil {
-		fmt.Printf("Error on receive: %v \n", err)
-		log.Fatalf("Error on receive: %v", err)
-	}
-	// finally when done, simply wait for for access with either token og agaadasdlasd
-	go listenForMessages(ChatStream)
-	parseInput(ChatStream)
-
+	nodeServerconn = conn
 }
 
 // connectToOtherNode establishes a connection with the other node and performs a greeting
 func connectToOtherNode(node *Node, address string) error {
 	time.Sleep(10 * time.Second)
 
-	conn, err := grpc.Dial(address /*, grpc.WithInsecure() // this is deprecated*/)
+	conn, err := grpc.Dial(address)
 	if err != nil {
 		return err
 	}
@@ -131,6 +149,10 @@ func SendMessage(content string, stream hs.HelloService_SayHelloClient) {
 		Name: "something",
 	}
 	stream.Send(message)
+}
+
+func (n *Node) SayHello(ctx context.Context, in *hs.HelloRequest) (*hs.HelloReply, error) {
+	return &hs.HelloReply{Message: "Hello " + strconv.Itoa(n.ID)}, nil
 }
 
 func listenForMessages(stream hs.HelloService_SayHelloClient) {
