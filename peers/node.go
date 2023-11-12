@@ -10,18 +10,20 @@ package main
 import (
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
-
 	"strconv"
+
 	"strings"
 	"time"
 
 	hs "github.com/Alex-itu/Consensus_gRPC/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	//"google.golang.org/grpc/reflection"
 )
 
@@ -41,49 +43,40 @@ func startServer(server *grpc.Server, lis net.Listener) {
 	}()
 }
 
+var nodeID = flag.Int("id", 10, "The id for the node")
+var connectedPort = flag.String("port", "20", "port to another node")
+
 func main() {
-	/*args := os.Args[1:]
+	//args := os.Args[1:]
 
-	// example arg[0] -> :5000
-	port := args[0]
-	otherNodeAddress := args[1]
+	//id, err := strconv.Atoi(args[0])
+	//address := args[1]
+	flag.Parse()
 
-	server, lis, err := createServer(port)
-	if err != nil {
-		log.Fatalf("failed to create server: %v", err)
-	}
-
-	node := &Node{ID: 42, Client: nil}
-	hs.RegisterHelloServiceServer(server, node)
-	reflection.Register(server)
-
-	startServer(server, lis)
-
-	// wait for other nodes to be ready
-	time.Sleep(30 * time.Second)
-
-	// setup connection with other node
-	err = connectToOtherNode(node, otherNodeAddress)
-	if err != nil {
-		log.Fatalf("could not connect or greet the other node: %v", err)
-	}
-
-	for {
-		time.Sleep(10 * time.Second)
-	}*/
-	//--------------------------------------------------------------------
-	args := os.Args[1:]
-
-	id, err := strconv.Atoi(args[0])
-	address := args[1]
-
-	node := &Node{ID: id, Client: nil}
+	node := &Node{ID: *nodeID, Client: nil}
 
 	fmt.Println("--- CLIENT APP ---")
+	fmt.Printf("nodeID: " + strconv.Itoa(*nodeID) + " and port to connect to: " + *connectedPort)
 
 	//"Discorver" other nodes (We just need hard coded values)
 	// if other nodes exsist, the join the connection
-	connectToOtherNode(node, address) //TODO: fix
+	//connectToOtherNode(node, *connectedPort) //TODO: fix
+
+	time.Sleep(10 * time.Second)
+
+	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+	conn, err := grpc.Dial(*connectedPort, opts...)
+	if err != nil {
+		fmt.Printf("failed on Dial: %v", err)
+	}
+	//defer conn.Close()
+
+	node.Client = hs.NewHelloServiceClient(conn)
+
+	//fmt.Println("the connection is: ", conn.GetState().String())
 
 	var yoyo hs.HelloServiceClient // maybe set global
 	ChatStream, err := yoyo.SayHello(context.Background())
@@ -99,6 +92,8 @@ func main() {
 
 // connectToOtherNode establishes a connection with the other node and performs a greeting
 func connectToOtherNode(node *Node, address string) error {
+	time.Sleep(10 * time.Second)
+
 	conn, err := grpc.Dial(address /*, grpc.WithInsecure() // this is deprecated*/)
 	if err != nil {
 		return err
