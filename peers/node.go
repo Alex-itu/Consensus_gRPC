@@ -72,7 +72,7 @@ func main() {
 		Clientbackward: nil,
 	}
 
-	fmt.Printf("nodeID: " + node.name + " and port to connect to: " + node.Port + " \n")
+	fmt.Printf("nodeID: " + node.name + " and port to connect to: " + node.Port + " \n \n")
 
 	// start server
 	list, err := net.Listen("tcp", fmt.Sprintf(":%s", node.Port))
@@ -106,7 +106,7 @@ func main() {
 		fmt.Printf("failed on Dial: %v", err)
 	}
 
-	fmt.Printf("Dialing the server from client. \n")
+	fmt.Printf("Dialing the server from client. \n \n")
 
 	node.Client = hs.NewTokenServiceClient(conn)
 	nodeServerconn = conn
@@ -201,7 +201,7 @@ func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println("Successfully connected to forward node. \n")
+	fmt.Println("Successfully connected to forward node. \n \n")
 
 	// delete if not used
 	node.Clientforward = hs.NewTokenServiceClient(connforward)
@@ -209,10 +209,11 @@ func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 	//need to check for if nodeID is 10, since the backward node is 30 or the highst id
 	connBackward, err := grpc.Dial(*conPortbackward, opts...)
 	if err != nil {
+		fmt.Printf("Failed to connect to backward node: %v\n", err)
 		connforward.Close()
 		return nil, nil, err
 	}
-	fmt.Println("Successfully connected to backward node.")
+	fmt.Println("Successfully connected to backward node. \n \n")
 
 	// delete if not used
 	node.Clientbackward = hs.NewTokenServiceClient(connBackward)
