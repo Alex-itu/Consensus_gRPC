@@ -4,6 +4,10 @@
 // go run .\node.go -name bob -port 5010 -portfor 5000 -portback 5000
 // go run .\node.go -name charlie -port 5020 -portfor 5000 -portback 5010
 
+// go run .\node.go -name alice -port 5000 -portfor localhost:5010 -portback localhost:5020
+// go run .\node.go -name bob -port 5010 -portfor localhost:5020 -portback localhost:5000
+// go run .\node.go -name charlie -port 5020 -portfor localhost:5000 -portback localhost:5010
+
 package main
 
 import (
@@ -68,7 +72,7 @@ func main() {
 		Clientbackward: nil,
 	}
 
-	fmt.Printf("nodeID: " + node.name + " and port to connect to: " + node.Port)
+	fmt.Printf("nodeID: " + node.name + " and port to connect to: " + node.Port + " \n")
 
 	// start server
 	list, err := net.Listen("tcp", fmt.Sprintf(":%s", node.Port))
@@ -102,7 +106,7 @@ func main() {
 		fmt.Printf("failed on Dial: %v", err)
 	}
 
-	fmt.Printf("Dialing the server from client")
+	fmt.Printf("Dialing the server from client. \n")
 
 	node.Client = hs.NewTokenServiceClient(conn)
 	nodeServerconn = conn
@@ -121,9 +125,14 @@ func main() {
 		fmt.Printf("Error on receive: %v \n", err)
 	}
 
-	forwardClientTokenStream, err := node.Clientforward.TokenChat(context.Background())
-	if err != nil {
-		fmt.Printf("Error while establishing forward token chat: %v \n", err)
+	if node.Clientforward != nil {
+		forwardClientTokenStream, err = node.Clientforward.TokenChat(context.Background())
+		if err != nil {
+			fmt.Printf("Error while establishing forward token chat: %v \n", err)
+			return
+		}
+	} else {
+		fmt.Printf("Error: node.Clientforward is nil\n")
 		return
 	}
 
@@ -192,6 +201,7 @@ func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Println("Successfully connected to forward node. \n")
 
 	// delete if not used
 	node.Clientforward = hs.NewTokenServiceClient(connforward)
@@ -202,6 +212,7 @@ func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 		connforward.Close()
 		return nil, nil, err
 	}
+	fmt.Println("Successfully connected to backward node.")
 
 	// delete if not used
 	node.Clientbackward = hs.NewTokenServiceClient(connBackward)
