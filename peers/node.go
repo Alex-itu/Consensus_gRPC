@@ -1,9 +1,8 @@
 // how to call the peer to peer network
-// have one terminal connect to
-// go run peers/node.go :5000 localhost:8500
-// have another terminal connect to
-// go run peers/node.go :5001 localhost:8500
-// the peers will then connect
+// total mess
+// go run .\node.go -name alice -port 5000 -portfor 5010 -portback 5010
+// go run .\node.go -name bob -port 5010 -portfor 5000 -portback 5000
+// go run .\node.go -name charlie -port 5020 -portfor 5000 -portback 5010
 
 package main
 
@@ -78,14 +77,16 @@ func main() {
 		return
 	}
 
-	var opts []grpc.ServerOption
-	clientServer := grpc.NewServer(opts...)
+	go func() {
+		var opts []grpc.ServerOption
+		clientServer := grpc.NewServer(opts...)
 
-	hs.RegisterTokenServiceServer(clientServer, node)
+		hs.RegisterTokenServiceServer(clientServer, node)
 
-	if err := clientServer.Serve(list); err != nil {
-		fmt.Printf("failed to serve %v", err)
-	}
+		if err := clientServer.Serve(list); err != nil {
+			fmt.Printf("failed to serve %v", err)
+		}
+	}()
 	// started server
 	//createServer(*node)
 
@@ -110,20 +111,33 @@ func main() {
 
 	defer nodeServerconn.Close()
 
-	clientServerTokenStream, err := clientservertokenstream.TokenChat(context.Background())
+	connforward, connBackward, err := connectToOtherNode(*node)
+	if err != nil {
+		log.Fatalf("failed to connect to other nodes: %v", err)
+	}
+
+	clientServerTokenStream, err := node.Client.TokenChat(context.Background())
 	if err != nil {
 		fmt.Printf("Error on receive: %v \n", err)
 	}
 
-	forwardClientTokenStream, err := forwardclienttokenstream.TokenChat(context.Background())
+	forwardClientTokenStream, err := node.Clientforward.TokenChat(context.Background())
 	if err != nil {
-		fmt.Printf("Error on receive: %v \n", err)
+		fmt.Printf("Error while establishing forward token chat: %v \n", err)
+		return
 	}
 
-	backwardClientTokenStream, err := backwardclienttokenstream.TokenChat(context.Background())
+	backwardClientTokenStream, err := node.Clientbackward.TokenChat(context.Background())
 	if err != nil {
-		fmt.Printf("Error on receive: %v \n", err)
+		fmt.Printf("Error while establishing backward token chat: %v \n", err)
+		return
 	}
+
+	defer connforward.Close()
+	defer connBackward.Close()
+
+	node.Clientforward = hs.NewTokenServiceClient(connforward)
+	node.Clientbackward = hs.NewTokenServiceClient(connBackward)
 
 	go ListenInternal(clientServerTokenStream, forwardClientTokenStream, backwardClientTokenStream)
 
@@ -168,7 +182,7 @@ func createClientServerConn(node Node) {
 }
 
 // connectToOtherNode establishes a connection with the other node and performs a greeting
-func connectToOtherNode(node Node) error {
+func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -176,9 +190,8 @@ func connectToOtherNode(node Node) error {
 
 	connforward, err := grpc.Dial(*connPortforward, opts...)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	defer connforward.Close()
 
 	// delete if not used
 	node.Clientforward = hs.NewTokenServiceClient(connforward)
@@ -186,14 +199,14 @@ func connectToOtherNode(node Node) error {
 	//need to check for if nodeID is 10, since the backward node is 30 or the highst id
 	connBackward, err := grpc.Dial(*conPortbackward, opts...)
 	if err != nil {
-		return err
+		connforward.Close()
+		return nil, nil, err
 	}
-	defer connBackward.Close()
 
 	// delete if not used
 	node.Clientbackward = hs.NewTokenServiceClient(connBackward)
 
-	return nil
+	return connforward, connBackward, nil
 }
 
 func parseInput(stream hs.TokenService_TokenChatClient) {
@@ -274,16 +287,16 @@ func ListenInternal(stream hs.TokenService_TokenChatClient, forwardStream hs.Tok
 			}
 		} else if token {
 			fmt.Printf("%s recieved token", *name)
-				log.Printf("%s recieved token", *name)
+			log.Printf("%s recieved token", *name)
 
-				fmt.Printf("%s is writing to the critical section", *name)
-				log.Printf("%s is writing to the critical section", *name)
+			fmt.Printf("%s is writing to the critical section", *name)
+			log.Printf("%s is writing to the critical section", *name)
 
-				fmt.Printf("%s is sending the token to the next node", *name)
-				log.Printf("%s is sending the token to the next node", *name)
+			fmt.Printf("%s is sending the token to the next node", *name)
+			log.Printf("%s is sending the token to the next node", *name)
 
-				token = false
-				forwardStream.Send(&hs.TokenRequest{Token: "token"})
+			token = false
+			forwardStream.Send(&hs.TokenRequest{Token: "token"})
 		}
 	}
 }
