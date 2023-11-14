@@ -11,12 +11,12 @@ go run .\node.go -name charlie -port 5020 -portfor localhost:5000 -portback loca
 
 To explain the arguments a bit:
 
--name is the name of the client node which gets printed in the log and terminal
+\-name is the name of the client node which gets printed in the log and terminal
 
--port is the port of the client you are currently creating in the terminal window
+\-port is the port of the client you are currently creating in the terminal window
 
--portfor is the forward client port in the token ring aka the guy you pass the token to after you are done
+\-portfor is the forward client port in the token ring aka the guy you pass the token to after you are done
 
--portback is the backward clients port which is the client you recieve tokens from 
+\-portback is the backward clients port which is the client you recieve tokens from 
 
--hasToken is a boolean modifier which dictates who starts with the token. !ONLY 1 CLIENT SHOULD EVER HAVE A TOKEN!
+\-hasToken is a boolean modifier which dictates who starts with the token. !ONLY 1 CLIENT SHOULD EVER HAVE A TOKEN!
