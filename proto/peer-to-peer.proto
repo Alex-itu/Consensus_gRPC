@@ -5,7 +5,7 @@ option go_package = "github.com/Alex-itu/Consensus_gRPC/proto";
 package proto;
 
 // compile command:
-// protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative [path to file, ex. proto/template.proto]
+// protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/peer-to-peer.proto 
 
 // if you need to target a port or localhost (or ip address)
 // go run main.go -port=1234 -target="localhost:5678"
@@ -31,16 +31,22 @@ option go_package = "github.com/Alex-itu/Consensus_gRPC/tree/main/proto";
 
 package helloservice;
 
-service HelloService {
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+// HelloService
+service TokenService {
+  //change these names
+  rpc tokenChat (stream TokenRequest) returns (stream TokenRequest) {}
 }
 
+//HelloRequest
 // The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
+//change name, also add more types in
+message TokenRequest {
+  string token = 1;
 }
 
+// HelloReply
 // The response message containing the greetings
-message HelloReply {
+//change name, also add more types in
+message ack {
   string message = 1;
 }
