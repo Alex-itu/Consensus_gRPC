@@ -8,6 +8,7 @@ go run .\node.go -name bob -port 5010 -portfor localhost:5020 -portback localhos
 
 go run .\node.go -name charlie -port 5020 -portfor localhost:5000 -portback localhost:5010
 
+You can have more nodes you simply need to make sure that the last node that is ran has the the portfor has the port of the first. 
 
 To explain the arguments a bit:
 
