@@ -4,6 +4,7 @@
 // go run .\node.go -name bob -port 5010 -portfor localhost:5020 -portback localhost:5000
 // go run .\node.go -name charlie -port 5020 -portfor localhost:5000 -portback localhost:5010
 
+
 package main
 
 import (
@@ -267,4 +268,5 @@ func setLog() *os.File {
 	}
 	log.SetOutput(f)
 	return f
+
 }
