@@ -1,15 +1,8 @@
 // how to call the peer to peer network
-// total mess
-// go run .\node.go -name alice -port 5000 -portfor 5010 -portback 5010
-// go run .\node.go -name bob -port 5010 -portfor 5000 -portback 5000
-// go run .\node.go -name charlie -port 5020 -portfor 5000 -portback 5010
 
 // go run .\node.go -name alice -port 5000 -portfor localhost:5010 -portback localhost:5020
 // go run .\node.go -name bob -port 5010 -portfor localhost:5020 -portback localhost:5000
 // go run .\node.go -name charlie -port 5020 -portfor localhost:5000 -portback localhost:5010
-
-// go run .\node.go -name alice -port 5000 -portfor localhost:5010 -portback localhost:5010
-// go run .\node.go -name bob -port 5010 -portfor localhost:5000 -portback localhost:5000
 
 package main
 
@@ -27,7 +20,6 @@ import (
 	hs "github.com/Alex-itu/Consensus_gRPC/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	//"google.golang.org/grpc/reflection"
 )
 
 // Node structure
@@ -92,8 +84,6 @@ func main() {
 			fmt.Printf("failed to serve %v", err)
 		}
 	}()
-	// started server
-	//createServer(*node)
 
 	time.Sleep(1 * time.Second)
 
@@ -111,13 +101,8 @@ func main() {
 
 	node.Client = hs.NewTokenServiceClient(conn)
 	nodeServerconn = conn
-	//createClientServerConn(*node)
-	// created conn
 
 	defer nodeServerconn.Close()
-
-	//connforward, connBackward, err := connectToOtherNode(*node)
-	//connectoOtherNode start
 
 	connforward, err := grpc.Dial(*connPortforward, opts...)
 	if err != nil {
@@ -137,7 +122,6 @@ func main() {
 	}
 	fmt.Println("Successfully connected to backward node. \n \n")
 
-	// delete if not used
 	node.Clientbackward = hs.NewTokenServiceClient(connBackward)
 
 	//connectoOtherNode end
@@ -172,7 +156,6 @@ func main() {
 	defer connforward.Close()
 	defer connBackward.Close()
 
-	//time.Sleep(15 * time.Second)
 	ListenInternal(clientServerTokenStream, forwardClientTokenStream, backwardClientTokenStream)
 }
 
@@ -210,7 +193,6 @@ func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 
 	fmt.Println("Successfully connected to forward node. \n \n")
 
-	// delete if not used
 	node.Clientforward = hs.NewTokenServiceClient(connforward)
 
 	//need to check for if nodeID is 10, since the backward node is 30 or the highst id
@@ -222,7 +204,6 @@ func connectToOtherNode(node Node) (*grpc.ClientConn, *grpc.ClientConn, error) {
 	}
 	fmt.Println("Successfully connected to backward node. \n \n")
 
-	// delete if not used
 	node.Clientbackward = hs.NewTokenServiceClient(connBackward)
 
 	return connforward, connBackward, nil
