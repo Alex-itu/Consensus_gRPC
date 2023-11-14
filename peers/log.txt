@@ -1,0 +1,63 @@
+2023/11/14 10:58:54 alice recieved token
+2023/11/14 10:58:54 alice is writing to the critical section
+2023/11/14 10:58:54 alice is sending the token to the next node
+2023/11/14 10:58:55 bob recieved token
+2023/11/14 10:58:55 bob is writing to the critical section
+2023/11/14 10:58:55 bob is sending the token to the next node
+2023/11/14 10:58:55 charlie recieved token
+2023/11/14 10:58:55 charlie is writing to the critical section
+2023/11/14 10:58:55 charlie is sending the token to the next node
+2023/11/14 10:58:55 alice recieved token
+2023/11/14 10:58:55 alice is writing to the critical section
+2023/11/14 10:58:55 alice is sending the token to the next node
+2023/11/14 10:58:56 bob recieved token
+2023/11/14 10:58:56 bob is writing to the critical section
+2023/11/14 10:58:56 bob is sending the token to the next node
+2023/11/14 10:58:56 charlie recieved token
+2023/11/14 10:58:56 charlie is writing to the critical section
+2023/11/14 10:58:56 charlie is sending the token to the next node
+2023/11/14 10:58:56 alice recieved token
+2023/11/14 10:58:56 alice is writing to the critical section
+2023/11/14 10:58:56 alice is sending the token to the next node
+2023/11/14 10:58:57 bob recieved token
+2023/11/14 10:58:57 bob is writing to the critical section
+2023/11/14 10:58:57 bob is sending the token to the next node
+2023/11/14 10:58:57 charlie recieved token
+2023/11/14 10:58:57 charlie is writing to the critical section
+2023/11/14 10:58:57 charlie is sending the token to the next node
+2023/11/14 10:58:57 alice recieved token
+2023/11/14 10:58:57 alice is writing to the critical section
+2023/11/14 10:58:57 alice is sending the token to the next node
+2023/11/14 10:58:58 bob recieved token
+2023/11/14 10:58:58 bob is writing to the critical section
+2023/11/14 10:58:58 bob is sending the token to the next node
+2023/11/14 10:58:58 charlie recieved token
+2023/11/14 10:58:58 charlie is writing to the critical section
+2023/11/14 10:58:58 charlie is sending the token to the next node
+2023/11/14 10:58:58 alice recieved token
+2023/11/14 10:58:58 alice is writing to the critical section
+2023/11/14 10:58:58 alice is sending the token to the next node
+2023/11/14 10:58:59 bob recieved token
+2023/11/14 10:58:59 bob is writing to the critical section
+2023/11/14 10:58:59 bob is sending the token to the next node
+2023/11/14 10:58:59 charlie recieved token
+2023/11/14 10:58:59 charlie is writing to the critical section
+2023/11/14 10:58:59 charlie is sending the token to the next node
+2023/11/14 10:58:59 alice recieved token
+2023/11/14 10:58:59 alice is writing to the critical section
+2023/11/14 10:58:59 alice is sending the token to the next node
+2023/11/14 10:59:00 bob recieved token
+2023/11/14 10:59:00 bob is writing to the critical section
+2023/11/14 10:59:00 bob is sending the token to the next node
+2023/11/14 10:59:00 charlie recieved token
+2023/11/14 10:59:00 charlie is writing to the critical section
+2023/11/14 10:59:00 charlie is sending the token to the next node
+2023/11/14 10:59:00 alice recieved token
+2023/11/14 10:59:00 alice is writing to the critical section
+2023/11/14 10:59:00 alice is sending the token to the next node
+2023/11/14 10:59:01 bob recieved token
+2023/11/14 10:59:01 bob is writing to the critical section
+2023/11/14 10:59:01 bob is sending the token to the next node
+2023/11/14 10:59:01 charlie recieved token
+2023/11/14 10:59:01 charlie is writing to the critical section
+2023/11/14 10:59:01 charlie is sending the token to the next node
